@@ -57,6 +57,7 @@ public struct NoiseSettings {
 /// <summary>
 /// Generates simplex noise.
 /// </summary>
+[BurstCompile]
 public struct SimplexNoise {
   /// <summary>
   /// The settings of a fractal noise generator.

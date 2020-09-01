@@ -316,6 +316,7 @@ public class MarchingCubes {
   /// <returns>
   /// The points by which the marching cube intersects the volume data.
   /// </returns>
+  [BurstCompile]
   public static NativeList<float3> generate(float[,,] data, int size, int lod) {
     // We'll store our result here.
     var result = new NativeList<float3>(Allocator.Temp);

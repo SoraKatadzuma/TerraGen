@@ -62,7 +62,7 @@ public sealed class TerrainGenerator : SystemBase {
       var locale = mChunkLocation;
 
       // Set noise settings offset.
-      mNoiseSettings.offset = locale * (mNoiseSettings.size - 1);
+      mNoiseSettings.offset = locale;
 
       // Create noise generator, and proceed with generation.
       var noiseGenerator = new SimplexNoise(mNoiseSettings);
