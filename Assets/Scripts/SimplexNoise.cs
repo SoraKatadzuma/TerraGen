@@ -123,21 +123,12 @@ public struct SimplexNoise {
   public float[,] fractal2D() {
     var prng      = new Prng(settings.seed);
     var noise     = new float[settings.size, settings.size];
-    var offsets   = new float2[settings.octaves];
     var sample    = new float2();
     var output    = 0.0f;
     var frequency = settings.frequency;
     var amplitude = settings.amplitude;
     var maxNoise  = float.MinValue;
     var minNoise  = float.MaxValue;
-    var halfSize  = settings.size / 2.0f;
-    for (int octave = 0; octave < settings.octaves; octave++) {
-      // Create new offset.
-      offsets[octave] = new float2(
-        prng.Next(-1000, 1000) + settings.offset.x,
-        prng.Next(-1000, 1000) + settings.offset.y
-      );
-    }
 
     // Loop through indices.
     for (int y = 0; y < settings.size; y++) {
@@ -149,8 +140,8 @@ public struct SimplexNoise {
 
       // Loop through octaves.
       for (int octave = 0; octave < settings.octaves; octave++) {
-        sample.x   = (x - halfSize) / settings.scale * frequency + offsets[octave].x;
-        sample.y   = (y - halfSize) / settings.scale * frequency + offsets[octave].y;
+        sample.x   = x / settings.scale * frequency + settings.offset.x;
+        sample.y   = y / settings.scale * frequency + settings.offset.y;
         output     = value(sample) * 2 - 1;
         output    *= amplitude;
         amplitude *= settings.persistence;
@@ -181,22 +172,12 @@ public struct SimplexNoise {
   public float[,,] fractal3D() {
     // var prng      = new Prng(settings.seed);
     var noise     = new float[settings.size, settings.size, settings.size];
-    var offsets   = new float3[settings.octaves];
     var sample    = new float3();
     var output    = 0.0f;
     var frequency = settings.frequency;
     var amplitude = settings.amplitude;
     var maxNoise  = float.MinValue;
     var minNoise  = float.MaxValue;
-    var halfSize  = settings.size / 2.0f;
-    // for (int octave = 0; octave < settings.octaves; octave++) {
-    //   // Create new offset.
-    //   offsets[octave] = new float3(
-    //     prng.Next(-1000, 1000) + settings.offset.x,
-    //     prng.Next(-1000, 1000) + settings.offset.y,
-    //     prng.Next(-1000, 1000) + settings.offset.z
-    //   );
-    // }
 
     // Loop through indices.
     for (int z = 0; z < settings.size; z++) {
@@ -209,9 +190,9 @@ public struct SimplexNoise {
 
       // Loop through octaves.
       for (int octave = 0; octave < settings.octaves; octave++) {
-        sample.x   = (x - halfSize) / settings.scale * frequency + settings.offset.x;
-        sample.y   = (y - halfSize) / settings.scale * frequency + settings.offset.y;
-        sample.z   = (z - halfSize) / settings.scale * frequency + settings.offset.z;
+        sample.x   = x / settings.scale * frequency + settings.offset.x;
+        sample.y   = y / settings.scale * frequency + settings.offset.y;
+        sample.z   = z / settings.scale * frequency + settings.offset.z;
         output     = value(sample) * 2 - 1;
         output    *= amplitude;
         amplitude *= settings.persistence;

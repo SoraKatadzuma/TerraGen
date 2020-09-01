@@ -155,13 +155,13 @@ MonoBehaviour:
       x: 0
       y: 0
       z: 0
-    scale: 128
+    scale: 96
     lacunarity: 2
     persistence: 0.5
     frequency: 1
     amplitude: 1
     seed: 65535
-    size: 17
+    size: 16
     octaves: 4
 --- !u!4 &302447152
 Transform:
