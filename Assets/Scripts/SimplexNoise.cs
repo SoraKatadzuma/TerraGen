@@ -141,8 +141,8 @@ public struct SimplexNoise {
 
       // Loop through octaves.
       for (int octave = 0; octave < settings.octaves; octave++) {
-        sample.x   = x / settings.scale * frequency + settings.offset.x;
-        sample.y   = y / settings.scale * frequency + settings.offset.y;
+        sample.x   = (x + settings.offset.x) / settings.scale * frequency;
+        sample.y   = (y + settings.offset.y) / settings.scale * frequency;
         output     = value(sample) * 2 - 1;
         output    *= amplitude;
         amplitude *= settings.persistence;
@@ -191,9 +191,9 @@ public struct SimplexNoise {
 
       // Loop through octaves.
       for (int octave = 0; octave < settings.octaves; octave++) {
-        sample.x   = x / settings.scale * frequency + settings.offset.x;
-        sample.y   = y / settings.scale * frequency + settings.offset.y;
-        sample.z   = z / settings.scale * frequency + settings.offset.z;
+        sample.x   = (x + settings.offset.x) / settings.scale * frequency;
+        sample.y   = (y + settings.offset.y) / settings.scale * frequency;
+        sample.z   = (z + settings.offset.z) / settings.scale * frequency;
         output     = value(sample) * 2 - 1;
         output    *= amplitude;
         amplitude *= settings.persistence;

@@ -62,7 +62,7 @@ public sealed class TerrainGenerator : SystemBase {
       var locale = mChunkLocation;
 
       // Set noise settings offset.
-      mNoiseSettings.offset = locale;
+      mNoiseSettings.offset = locale * (mNoiseSettings.size - 1);
 
       // Create noise generator, and proceed with generation.
       var noiseGenerator = new SimplexNoise(mNoiseSettings);
@@ -149,7 +149,7 @@ public sealed class TerrainGenerator : SystemBase {
       EntityManager.SetComponentData(newChunks[index], new RenderBounds {
         Value = new AABB {
           Center  = new float3(0.0f, 0.0f, 0.0f),
-          Extents = new float3(noiseSettings.size - 1, noiseSettings.size - 1, noiseSettings.size - 1)
+          Extents = new float3(1.0f, 1.0f, 1.0f) * (noiseSettings.size - 1)
         }
       });
 
