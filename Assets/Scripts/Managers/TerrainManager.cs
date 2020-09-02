@@ -31,12 +31,12 @@ public class TerrainManager : MonoBehaviour {
 
     // Tell the terrain generator to generate this chunk.
     terrainGenerator.noiseSettings = noiseSettings;
-    float3 chunksBegin  = playerTransform.position / noiseSettings.size;
-           chunksBegin -= (renderDistance / 2.0f);
-    float3 chunksEnd    = chunksBegin + renderDistance;
-    for (float z = chunksBegin.z; z < chunksEnd.z; z += 1.0f)
-    for (float y = chunksBegin.y; y < chunksEnd.y; y += 1.0f)
-    for (float x = chunksBegin.x; x < chunksEnd.x; x += 1.0f)
+    int3 chunksBegin  = new int3(playerTransform.position / noiseSettings.size);
+         chunksBegin -= (renderDistance / 2);
+    int3 chunksEnd    = chunksBegin + renderDistance;
+    for (float z = chunksBegin.z; z < chunksEnd.z; z++)
+    for (float y = chunksBegin.y; y < chunksEnd.y; y++)
+    for (float x = chunksBegin.x; x < chunksEnd.x; x++)
       terrainGenerator.chunksToLoad.Add(new float3(x, y, z));
   }
 }

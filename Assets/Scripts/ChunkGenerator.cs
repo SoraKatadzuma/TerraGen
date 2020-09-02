@@ -39,7 +39,9 @@ public class ChunkGenerator : MonoBehaviour {
   /// </summary>
   private void Start() {
     // Initialize the noise generator.
-    mNoiseGenerator = new SimplexNoise(noiseSettings);
+    noiseSettings.size += 1;
+    mNoiseGenerator     = new SimplexNoise(noiseSettings);
+    noiseSettings.size -= 1;
 
     // Initialize the chunk mesh.
     mChunk                       = new GameObject();
@@ -51,6 +53,9 @@ public class ChunkGenerator : MonoBehaviour {
 
     // Generate mesh.
     generate();
+
+    // Set this chunk position so we can compare it to the chunk we're trying to generate
+    mChunk.transform.position = new Vector3(32.0f, -16.0f, -16.0f);
   }
 
   const float RADIUS = 64.0f;

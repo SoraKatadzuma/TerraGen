@@ -157,7 +157,7 @@ MonoBehaviour:
       x: 0
       y: 0
       z: 0
-    scale: 128
+    scale: 96
     lacunarity: 2
     persistence: 0.5
     frequency: 1
@@ -370,7 +370,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1286432465
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -385,16 +385,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   noiseSettings:
     offset:
-      x: 0
-      y: 0
-      z: 0
+      x: -16
+      y: -16
+      z: -16
     scale: 96
     lacunarity: 2
     persistence: 0.5
     frequency: 1
     amplitude: 1
     seed: 65535
-    size: 16
+    size: 32
     octaves: 4
 --- !u!4 &1286432466
 Transform:

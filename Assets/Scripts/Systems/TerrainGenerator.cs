@@ -67,9 +67,10 @@ public sealed class TerrainGenerator : SystemBase {
       // Create noise generator, and proceed with generation.
           mNoiseSettings.size += 1; // Increase for 1 block overlap (chunk boundary sowing).
       var noiseGenerator       = new SimplexNoise(mNoiseSettings);
+          mNoiseSettings.size -= 1;
 
       // Make sure to decrease the noise settings by 1 so that it generates properly without index error.
-      var results = MarchingCubes.generate(noiseGenerator.fractal3D(), mNoiseSettings.size - 1, lod: 1);
+      var results = MarchingCubes.generate(noiseGenerator.fractal3D(), mNoiseSettings.size, lod: 1);
 
       // Copy data.
       mChunkDataStorage.CopyFrom(results.ToArray());
@@ -81,6 +82,11 @@ public sealed class TerrainGenerator : SystemBase {
   /// The top level noise settings for generating chunks.
   /// </summary>
   public NoiseSettings noiseSettings;
+
+  /// <summary>
+  /// Tracks the chunks that are loaded.
+  /// </summary>
+  public NativeList<float3> mLoadedChunks;
 
   /// <summary>
   /// A list of chunks that need to be loaded by the terrain generator.
@@ -119,7 +125,7 @@ public sealed class TerrainGenerator : SystemBase {
     );
 
     // Create material.
-    mChunkMaterial = new Material(Shader.Find("StandardDoubleSide"));
+    mChunkMaterial = new Material(Shader.Find("Standard"));
   }
 
   /// <summary>
@@ -161,8 +167,8 @@ public sealed class TerrainGenerator : SystemBase {
         mesh           = new Mesh(),
         material       = mChunkMaterial,
         layer          = LayerMask.GetMask("Default"),
-        // castShadows    = ShadowCastingMode.On,
-        // receiveShadows = true
+        castShadows    = ShadowCastingMode.On,
+        receiveShadows = true
       });
     }
 
