@@ -119,7 +119,7 @@ public sealed class TerrainGenerator : SystemBase {
     );
 
     // Create material.
-    mChunkMaterial = new Material(Shader.Find("Standard"));
+    mChunkMaterial = new Material(Shader.Find("StandardDoubleSide"));
   }
 
   /// <summary>
