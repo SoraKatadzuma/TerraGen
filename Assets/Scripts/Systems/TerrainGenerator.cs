@@ -62,11 +62,14 @@ public sealed class TerrainGenerator : SystemBase {
       var locale = mChunkLocation;
 
       // Set noise settings offset.
-      mNoiseSettings.offset = locale * (mNoiseSettings.size - 1);
+      mNoiseSettings.offset = locale * mNoiseSettings.size;
 
       // Create noise generator, and proceed with generation.
-      var noiseGenerator = new SimplexNoise(mNoiseSettings);
-      var results        = MarchingCubes.generate(noiseGenerator.fractal3D(), mNoiseSettings.size - 1, lod: 1);
+          mNoiseSettings.size += 1; // Increase for 1 block overlap (chunk boundary sowing).
+      var noiseGenerator       = new SimplexNoise(mNoiseSettings);
+
+      // Make sure to decrease the noise settings by 1 so that it generates properly without index error.
+      var results = MarchingCubes.generate(noiseGenerator.fractal3D(), mNoiseSettings.size - 1, lod: 1);
 
       // Copy data.
       mChunkDataStorage.CopyFrom(results.ToArray());
@@ -142,14 +145,14 @@ public sealed class TerrainGenerator : SystemBase {
     for (int index = 0; index < entityCount; index++) {
       // Set chunk world position.
       EntityManager.SetComponentData(newChunks[index], new Translation {
-        Value = chunksToLoad[index] * (noiseSettings.size - 1)
+        Value = chunksToLoad[index] * noiseSettings.size
       });
 
       // Set render bounds.
       EntityManager.SetComponentData(newChunks[index], new RenderBounds {
         Value = new AABB {
           Center  = new float3(0.0f, 0.0f, 0.0f),
-          Extents = new float3(1.0f, 1.0f, 1.0f) * (noiseSettings.size - 1)
+          Extents = new float3(1.0f, 1.0f, 1.0f) * noiseSettings.size
         }
       });
 
