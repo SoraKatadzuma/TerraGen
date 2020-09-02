@@ -34,9 +34,9 @@ public class TerrainManager : MonoBehaviour {
     int3 chunksBegin  = new int3(playerTransform.position / noiseSettings.size);
          chunksBegin -= (renderDistance / 2);
     int3 chunksEnd    = chunksBegin + renderDistance;
-    for (float z = chunksBegin.z; z < chunksEnd.z; z++)
-    for (float y = chunksBegin.y; y < chunksEnd.y; y++)
-    for (float x = chunksBegin.x; x < chunksEnd.x; x++)
-      terrainGenerator.chunksToLoad.Add(new float3(x, y, z));
+    for (int z = chunksBegin.z; z < chunksEnd.z; z++)
+    for (int y = chunksBegin.y; y < chunksEnd.y; y++)
+    for (int x = chunksBegin.x; x < chunksEnd.x; x++)
+      terrainGenerator.chunksToLoad.Add(new int3(x, y, z));
   }
 }

@@ -341,14 +341,14 @@ public class MarchingCubes {
 
       // Determine cube index.
       cubeIndex = 0;
-      if (data[xi0, yi0, zi1] < 0.6f) cubeIndex |= 0x01;
-      if (data[xi1, yi0, zi1] < 0.6f) cubeIndex |= 0x02;
-      if (data[xi1, yi0, zi0] < 0.6f) cubeIndex |= 0x04;
-      if (data[xi0, yi0, zi0] < 0.6f) cubeIndex |= 0x08;
-      if (data[xi0, yi1, zi1] < 0.6f) cubeIndex |= 0x10;
-      if (data[xi1, yi1, zi1] < 0.6f) cubeIndex |= 0x20;
-      if (data[xi1, yi1, zi0] < 0.6f) cubeIndex |= 0x40;
-      if (data[xi0, yi1, zi0] < 0.6f) cubeIndex |= 0x80;
+      if (data[xi0, yi0, zi1] < 0.5f) cubeIndex |= 0x01;
+      if (data[xi1, yi0, zi1] < 0.5f) cubeIndex |= 0x02;
+      if (data[xi1, yi0, zi0] < 0.5f) cubeIndex |= 0x04;
+      if (data[xi0, yi0, zi0] < 0.5f) cubeIndex |= 0x08;
+      if (data[xi0, yi1, zi1] < 0.5f) cubeIndex |= 0x10;
+      if (data[xi1, yi1, zi1] < 0.5f) cubeIndex |= 0x20;
+      if (data[xi1, yi1, zi0] < 0.5f) cubeIndex |= 0x40;
+      if (data[xi0, yi1, zi0] < 0.5f) cubeIndex |= 0x80;
 
       // Are we completely outside?
       if (edgeTable[cubeIndex] == 0)

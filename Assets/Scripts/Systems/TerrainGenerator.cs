@@ -28,7 +28,7 @@ public sealed class TerrainGenerator : SystemBase {
     /// The locations to generate chunks at.
     /// </summary>
     [ReadOnly]
-    private float3 mChunkLocation;
+    private int3 mChunkLocation;
 
     /// <summary>
     /// The noise settings for this chunk generator.
@@ -41,10 +41,7 @@ public sealed class TerrainGenerator : SystemBase {
     /// <param name="noiseSettings">
     /// The settings for the noise generator the job uses.
     /// </param>
-    public ChunkGeneratorJob(NativeList<float3> chunkDataStorage, float3 location, NoiseSettings noiseSettings) {
-      // Calculate the largets size for the chunk data.
-      int maxSize = noiseSettings.size * noiseSettings.size * noiseSettings.size;
-
+    public ChunkGeneratorJob(NativeList<float3> chunkDataStorage, int3 location, NoiseSettings noiseSettings) {
       // Initialize all data.
       mChunkDataStorage = chunkDataStorage;
       mChunkLocation    = location;
@@ -86,17 +83,17 @@ public sealed class TerrainGenerator : SystemBase {
   /// <summary>
   /// Tracks the chunks that are loaded.
   /// </summary>
-  public NativeList<float3> mLoadedChunks;
+  public NativeList<int3> mLoadedChunks;
 
   /// <summary>
   /// A list of chunks that need to be loaded by the terrain generator.
   /// </summary>
-  public NativeList<float3> chunksToLoad;
+  public NativeList<int3> chunksToLoad;
 
   /// <summary>
   /// A list of chunks that need to be unloaded by the terrain generator.
   /// </summary>
-  public NativeList<float3> chunksToUnload;
+  public NativeList<int3> chunksToUnload;
 
   /// <summary>
   /// The archetype for the entities created by this generator.
@@ -113,8 +110,8 @@ public sealed class TerrainGenerator : SystemBase {
   /// </summary>
   protected override void OnCreate() {
     // The bags to store.
-    chunksToLoad   = new NativeList<float3>(Allocator.Persistent);
-    chunksToUnload = new NativeList<float3>(Allocator.Persistent);
+    chunksToLoad   = new NativeList<int3>(Allocator.Persistent);
+    chunksToUnload = new NativeList<int3>(Allocator.Persistent);
 
     // Create chunk entity archetype.
     mChunkEntityArchetype = EntityManager.CreateArchetype(
@@ -167,8 +164,8 @@ public sealed class TerrainGenerator : SystemBase {
         mesh           = new Mesh(),
         material       = mChunkMaterial,
         layer          = LayerMask.GetMask("Default"),
-        castShadows    = ShadowCastingMode.On,
-        receiveShadows = true
+        // castShadows    = ShadowCastingMode.On,
+        // receiveShadows = true
       });
     }
 
