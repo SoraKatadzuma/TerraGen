@@ -7,6 +7,16 @@ using UnityEngine;
 /// </summary>
 public class TerrainManager : MonoBehaviour {
   /// <summary>
+  /// The player to render chunks at.
+  /// </summary>
+  public Transform playerTransform;
+
+  /// <summary>
+  /// The number of chunks in each direction to render.
+  /// </summary>
+  public int renderDistance;
+
+  /// <summary>
   /// The noise settings to use to generate terrain.
   /// </summary>
   public NoiseSettings noiseSettings;
@@ -21,9 +31,12 @@ public class TerrainManager : MonoBehaviour {
 
     // Tell the terrain generator to generate this chunk.
     terrainGenerator.noiseSettings = noiseSettings;
-    terrainGenerator.chunksToLoad.Add(new float3( 0.0f, 0.0f,  0.0f));
-    terrainGenerator.chunksToLoad.Add(new float3(-1.0f, 0.0f,  0.0f));
-    terrainGenerator.chunksToLoad.Add(new float3(-1.0f, 0.0f, -1.0f));
-    terrainGenerator.chunksToLoad.Add(new float3( 0.0f, 0.0f, -1.0f));
+    float3 chunksBegin  = playerTransform.position / noiseSettings.size;
+           chunksBegin -= (renderDistance / 2.0f);
+    float3 chunksEnd    = chunksBegin + renderDistance;
+    for (float z = chunksBegin.z; z < chunksEnd.z; z += 1.0f)
+    for (float y = chunksBegin.y; y < chunksEnd.y; y += 1.0f)
+    for (float x = chunksBegin.x; x < chunksEnd.x; x += 1.0f)
+      terrainGenerator.chunksToLoad.Add(new float3(x, y, z));
   }
 }
