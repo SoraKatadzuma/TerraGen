@@ -1,3 +1,4 @@
+using Unity.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -41,7 +42,6 @@ public class ChunkGenerator : MonoBehaviour {
     // Initialize the noise generator.
     noiseSettings.size += 1;
     mNoiseGenerator     = new SimplexNoise(noiseSettings);
-    noiseSettings.size -= 1;
 
     // Initialize the chunk mesh.
     mChunk                       = new GameObject();
@@ -67,11 +67,11 @@ public class ChunkGenerator : MonoBehaviour {
   /// Generates a single chunk with the noise generator.
   /// </summary>
   public void generate() {
-    // Generate vertices.
-    var data      = mNoiseGenerator.fractal3D();
-    var meshData  = MarchingCubes.generate(data, noiseSettings.size, lod: 1);
-    var vertices  = new Vector3[meshData.Length];
-    var triangles = new int    [meshData.Length];
+    // Generate mesh data.
+    var volumeData = mNoiseGenerator.fractal3D();
+    var meshData   = MarchingCubes.generate(volumeData, noiseSettings.size - 1, lod: 1);
+    var vertices   = new Vector3[meshData.Length];
+    var triangles  = new int    [meshData.Length];
     for (int index = 0; index < meshData.Length; index++) {
       vertices[index]  = meshData[index];
       triangles[index] = index;
@@ -84,6 +84,7 @@ public class ChunkGenerator : MonoBehaviour {
     mChunkMesh.UploadMeshData(true);
 
     // Get rid of mesh data.
+    volumeData.Dispose();
     meshData.Dispose();
   }
 }

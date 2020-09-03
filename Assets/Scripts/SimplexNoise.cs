@@ -1,4 +1,5 @@
 ﻿using Unity.Burst;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using Prng = System.Random;
@@ -121,20 +122,22 @@ public struct SimplexNoise {
   /// <returns>
   /// The a map of the noise field based on the generator settings.
   /// </returns>
-  public float[,] fractal2D() {
-    var prng      = new Prng(settings.seed);
-    var noise     = new float[settings.size, settings.size];
+  public NativeArray<float> fractal2D() {
+    var size      = settings.size * settings.size;
+    var noise     = new NativeArray<float>(size, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
     var sample    = new float2();
     var output    = 0.0f;
     var frequency = settings.frequency;
     var amplitude = settings.amplitude;
     var maxNoise  = float.MinValue;
     var minNoise  = float.MaxValue;
+    var index     = 0;
 
     // Loop through indices.
     for (int y = 0; y < settings.size; y++) {
     for (int x = 0; x < settings.size; x++) {
       // Reset variables.
+      index     = y * settings.size + x;
       amplitude = settings.amplitude;
       frequency = settings.frequency;
       output    = 0;
@@ -149,15 +152,17 @@ public struct SimplexNoise {
       }
 
       // Make sure to update noise scales.
-      noise[x, y] = output;
+      noise[index] = output;
       if (output > maxNoise) maxNoise = output;
       if (output < minNoise) minNoise = output;
     }}
 
     // Normalize noise.
     for (int y = 0; y < settings.size; y++)
-    for (int x = 0; x < settings.size; x++)
-      noise[x, y] = Mathf.InverseLerp(minNoise, maxNoise, noise[x, y]);
+    for (int x = 0; x < settings.size; x++) {
+      index = y * settings.size + x;
+      noise[index] = Mathf.InverseLerp(minNoise, maxNoise, noise[index]);
+    }
 
     // Send back the noise we generated.
     return noise;
@@ -169,21 +174,23 @@ public struct SimplexNoise {
   /// <returns>
   /// The a map of the noise field based on the generator settings.
   /// </returns>
-  public float[,,] fractal3D() {
-    // var prng      = new Prng(settings.seed);
-    var noise     = new float[settings.size, settings.size, settings.size];
+  public NativeArray<float> fractal3D() {
+    var size      = settings.size * settings.size * settings.size;
+    var noise     = new NativeArray<float>(size, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
     var sample    = new float3();
     var output    = 0.0f;
     var frequency = settings.frequency;
     var amplitude = settings.amplitude;
     var maxNoise  = float.MinValue;
     var minNoise  = float.MaxValue;
+    var index     = 0;
 
     // Loop through indices.
     for (int z = 0; z < settings.size; z++) {
     for (int y = 0; y < settings.size; y++) {
     for (int x = 0; x < settings.size; x++) {
       // Reset variables.
+      index     = (z * settings.size * settings.size) + (y * settings.size) + x;
       amplitude = settings.amplitude;
       frequency = settings.frequency;
       output    = 0;
@@ -199,7 +206,7 @@ public struct SimplexNoise {
       }
 
       // Make sure to update noise scales.
-      noise[x, y, z] = output;
+      noise[index] = output;
       if (output > maxNoise) maxNoise = output;
       if (output < minNoise) minNoise = output;
     }}}
@@ -207,8 +214,10 @@ public struct SimplexNoise {
     // Normalize noise.
     for (int z = 0; z < settings.size; z++)
     for (int y = 0; y < settings.size; y++)
-    for (int x = 0; x < settings.size; x++)
-      noise[x, y, z] = Mathf.InverseLerp(minNoise, maxNoise, noise[x, y, z]);
+    for (int x = 0; x < settings.size; x++) {
+      index = (z * settings.size * settings.size) + (y * settings.size) + x;
+      noise[index] = Mathf.InverseLerp(minNoise, maxNoise, noise[index]);
+    }
 
     // Send back the noise we generated.
     return noise;

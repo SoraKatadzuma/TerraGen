@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
@@ -13,68 +12,7 @@ using UnityEngine.Rendering;
 /// A terrain generator is responsible for generating chunks of a given terrain as fast as it
 /// possibly can.
 /// </summary>
-[BurstCompile]
 public sealed class TerrainGenerator : SystemBase {
-  /// <summary>
-  /// Responsible for generating a chunk.
-  /// </summary>
-  public struct ChunkGeneratorJob : IJob {
-    /// <summary>
-    /// A storage for generated chunks.
-    /// </summary>
-    private NativeList<float3> mChunkDataStorage;
-
-    /// <summary>
-    /// The locations to generate chunks at.
-    /// </summary>
-    [ReadOnly]
-    private int3 mChunkLocation;
-
-    /// <summary>
-    /// The noise settings for this chunk generator.
-    /// </summary>
-    private NoiseSettings mNoiseSettings;
-
-    /// <summary>
-    /// Creates a new ChunkGeneratorJob with the given noise settings.
-    /// </summary>
-    /// <param name="noiseSettings">
-    /// The settings for the noise generator the job uses.
-    /// </param>
-    public ChunkGeneratorJob(NativeList<float3> chunkDataStorage, int3 location, NoiseSettings noiseSettings) {
-      // Initialize all data.
-      mChunkDataStorage = chunkDataStorage;
-      mChunkLocation    = location;
-      mNoiseSettings    = noiseSettings;
-    }
-
-    /// <summary>
-    /// Called on this object to perform it's job.
-    /// </summary>
-    /// <param name="index">
-    /// The index of this job in the scheduler for this type of job.
-    /// </param>
-    public void Execute() {
-      // Data that we need to begin.
-      var locale = mChunkLocation;
-
-      // Set noise settings offset.
-      mNoiseSettings.offset = locale * mNoiseSettings.size;
-
-      // Create noise generator, and proceed with generation.
-          mNoiseSettings.size += 1; // Increase for 1 block overlap (chunk boundary sowing).
-      var noiseGenerator       = new SimplexNoise(mNoiseSettings);
-          mNoiseSettings.size -= 1;
-
-      // Make sure to decrease the noise settings by 1 so that it generates properly without index error.
-      var results = MarchingCubes.generate(noiseGenerator.fractal3D(), mNoiseSettings.size, lod: 1);
-
-      // Copy data.
-      mChunkDataStorage.CopyFrom(results.ToArray());
-      results.Dispose();
-    }
-  }
-
   /// <summary>
   /// The top level noise settings for generating chunks.
   /// </summary>
@@ -174,8 +112,15 @@ public sealed class TerrainGenerator : SystemBase {
     var meshLists  = new NativeList<float3>[entityCount];
     var chunkJobs  = new List<ChunkGeneratorJob>();
     for (int index = 0; index < entityCount; index++) {
+      // Prep generator job.
       meshLists[index] = new NativeList<float3>(Allocator.TempJob);
-      chunkJobs.Add(new ChunkGeneratorJob(meshLists[index], chunksToLoad[index], noiseSettings));
+      var generator    = new ChunkGeneratorJob {
+        chunkDataStorage = meshLists[index],
+        chunkLocation    = chunksToLoad[index],
+        noiseSettings    = noiseSettings
+      };
+
+      chunkJobs.Add(generator);
       jobHandles[index] = chunkJobs[index].Schedule();
     }
 
