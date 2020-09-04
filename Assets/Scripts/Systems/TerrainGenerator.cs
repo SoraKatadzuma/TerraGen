@@ -113,8 +113,9 @@ public sealed class TerrainGenerator : SystemBase {
     var chunkJobs  = new List<ChunkGeneratorJob>();
     for (int index = 0; index < entityCount; index++) {
       // Prep generator job.
-      meshLists[index] = new NativeList<float3>(Allocator.TempJob);
-      var generator    = new ChunkGeneratorJob {
+      meshLists[index]     = new NativeList<float3>(Allocator.TempJob);
+      noiseSettings.offset = chunksToLoad[index] * noiseSettings.size;
+      var generator        = new ChunkGeneratorJob {
         chunkDataStorage = meshLists[index],
         chunkLocation    = chunksToLoad[index],
         noiseSettings    = noiseSettings

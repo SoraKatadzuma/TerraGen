@@ -29,8 +29,7 @@ public struct ChunkGeneratorJob : IJob {
   /// </summary>
   public void Execute() {
     // Update noise settings.
-    noiseSettings.offset = chunkLocation * noiseSettings.size;
-    noiseSettings.size  += 1;
+    noiseSettings.size += 1;
 
     // Create noise generator, get volume data.
     var noiseGenerator = new SimplexNoise(noiseSettings);
