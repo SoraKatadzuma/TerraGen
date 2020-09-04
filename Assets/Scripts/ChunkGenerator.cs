@@ -13,11 +13,6 @@ public class ChunkGenerator : MonoBehaviour {
   public NoiseSettings noiseSettings;
 
   /// <summary>
-  /// The noise generator we will be using.
-  /// </summary>
-  private SimplexNoise mNoiseGenerator;
-
-  /// <summary>
   /// The mesh filter for the chunk.
   /// </summary>
   private MeshFilter mMeshFilter;
@@ -61,10 +56,6 @@ public class ChunkGenerator : MonoBehaviour {
   /// MAkes sure this object is initialized when it becomes usable in the engine.
   /// </summary>
   private void Start() {
-    // Initialize the noise generator.
-    noiseSettings.size += 1;
-    mNoiseGenerator     = new SimplexNoise(noiseSettings);
-
     // Initialize the chunk mesh.
     mChunk                       = new GameObject();
     mChunkMesh                   = new Mesh();
@@ -113,30 +104,5 @@ public class ChunkGenerator : MonoBehaviour {
     mChunkMesh.RecalculateNormals();
     mChunkMesh.UploadMeshData(true);
     mChunkData.Dispose();
-  }
-
-  /// <summary>
-  /// Generates a single chunk with the noise generator.
-  /// </summary>
-  public void generate() {
-    // Generate mesh data.
-    var volumeData = mNoiseGenerator.fractal3D();
-    var meshData   = MarchingCubes.generate(volumeData, noiseSettings.size - 1, lod: 1);
-    var vertices   = new Vector3[meshData.Length];
-    var triangles  = new int    [meshData.Length];
-    for (int index = 0; index < meshData.Length; index++) {
-      vertices[index]  = meshData[index];
-      triangles[index] = index;
-    }
-
-    // Set vertices in chunk mesh.
-    mChunkMesh.vertices  = vertices;
-    mChunkMesh.triangles = triangles;
-    mChunkMesh.RecalculateNormals();
-    mChunkMesh.UploadMeshData(true);
-
-    // Get rid of mesh data.
-    volumeData.Dispose();
-    meshData.Dispose();
   }
 }
