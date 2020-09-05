@@ -27,7 +27,7 @@ public class TerrainManager : MonoBehaviour {
   private void Start() {
     // Get the world we want to work with, then get TerrainGenerator system.
     var defaultWorld     = World.DefaultGameObjectInjectionWorld;
-    var terrainGenerator = defaultWorld.GetExistingSystem<TerrainGenerator>();
+    var terrainGenerator = defaultWorld.GetExistingSystem<sora.TerraGen.TerrainGenerator>();
 
     // Tell the terrain generator to generate this chunk.
     terrainGenerator.noiseSettings = noiseSettings;
