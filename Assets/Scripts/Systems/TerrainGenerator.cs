@@ -262,21 +262,7 @@ namespace sora.TerraGen {
     /// </summary>
     private void sanitizeChunksToLoad() {
       // Remove chunks that are already loaded.
-      int index = 0;
-      chunksToLoad.RemoveAll(item => {
-        // Keep track of the iteration we are on.
-        index++;
-
-        // Do not remote this element.
-        if (!mLoadedChunks.ContainsKey(item))
-          return false;
-
-        // Because we are removing this element we need to reduce our index by 1.
-        index--;
-
-        // Do remove this element.
-        return true;
-      });
+      chunksToLoad.RemoveAll(item => mLoadedChunks.ContainsKey(item));
     }
 
     /// <summary>
