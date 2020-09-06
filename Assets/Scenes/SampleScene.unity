@@ -151,13 +151,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerTransform: {fileID: 1841795170}
-  renderDistance: 2
+  renderDistance: 4
   noiseSettings:
     offset:
       x: 0
       y: 0
       z: 0
-    scale: 96
+    scale: 128
     lacunarity: 2
     persistence: 0.5
     frequency: 1

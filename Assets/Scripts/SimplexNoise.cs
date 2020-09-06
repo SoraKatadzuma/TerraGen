@@ -157,13 +157,6 @@ public struct SimplexNoise {
       if (output < minNoise) minNoise = output;
     }}
 
-    // Normalize noise.
-    for (int y = 0; y < settings.size; y++)
-    for (int x = 0; x < settings.size; x++) {
-      index = y * settings.size + x;
-      noise[index] = Mathf.InverseLerp(minNoise, maxNoise, noise[index]);
-    }
-
     // Send back the noise we generated.
     return noise;
   }
@@ -210,14 +203,6 @@ public struct SimplexNoise {
       if (output > maxNoise) maxNoise = output;
       if (output < minNoise) minNoise = output;
     }}}
-
-    // Normalize noise.
-    for (int z = 0; z < settings.size; z++)
-    for (int y = 0; y < settings.size; y++)
-    for (int x = 0; x < settings.size; x++) {
-      index = (z * settings.size * settings.size) + (y * settings.size) + x;
-      noise[index] = Mathf.InverseLerp(minNoise, maxNoise, noise[index]);
-    }
 
     // Send back the noise we generated.
     return noise;

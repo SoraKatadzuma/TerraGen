@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -168,6 +169,10 @@ namespace sora.TerraGen {
       if (chunksToLoad.Count > 0)
         scheduleChunksForLoad();
 
+      // Check if we can unload chunks.
+      if (chunksToUnload.Count > 0)
+        unloadChunks();
+
       // Handle the removal of completed jobs.
       removeCompletedJobs();
     }
@@ -179,6 +184,26 @@ namespace sora.TerraGen {
       sanitizeChunksToLoad();
       scheduleLoadingJobs();
       chunksToLoad.Clear();
+    }
+
+    /// <summary>
+    /// Unloads chunks at locations stored in the `chunksToUnload` member variable.
+    /// </summary>
+    private void unloadChunks() {
+      // Iterate over each chunk to unload.
+      chunksToUnload.RemoveAll(item => {
+        // If this isn't even contained, remove it.
+        if (!mLoadedChunks.ContainsKey(item))
+          return true;
+
+        // Get chunk entity and destory it.
+        var chunk = mLoadedChunks[item];
+
+        // Destroy entity and remove loaded entry.
+        EntityManager.DestroyEntity(chunk);
+        mLoadedChunks.Remove(item);
+        return true;
+      });
     }
 
     /// <summary>
