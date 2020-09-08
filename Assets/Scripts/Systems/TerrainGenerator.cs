@@ -82,9 +82,8 @@ namespace sora.TerraGen {
         noiseSettings.size  += 1;
 
         // Perform chunk generation.
-        var noiseGenerator = new SimplexNoise(noiseSettings);
-        var volumeData     = noiseGenerator.fractal3D();
-        var meshData       = MarchingCubes.generate(volumeData, noiseSettings.size - 1, lod: 1);
+        var volumeData = VolumeGenerator.generateData(noiseSettings);
+        var meshData   = MarchingCubes.generate(volumeData, noiseSettings.size - 1, lod: 1);
 
         // Manually copy mesh data.
         for (int index = 0; index < meshData.Length; index++)
@@ -159,6 +158,7 @@ namespace sora.TerraGen {
 
       // Create material.
       mChunkMaterial = new Material(Shader.Find("Standard"));
+      mChunkMaterial.enableInstancing = true;
     }
 
     /// <summary>
@@ -326,6 +326,9 @@ namespace sora.TerraGen {
         mChunkJobHandles.Add(chunkJob.Schedule());
         mRunningChunkJobs.Add(chunkJob);
       }
+
+      // Get rid of entities native array.
+      entities.Dispose();
     }
 
     /// <summary>

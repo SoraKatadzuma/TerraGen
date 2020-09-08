@@ -129,8 +129,6 @@ public struct SimplexNoise {
     var output    = 0.0f;
     var frequency = settings.frequency;
     var amplitude = settings.amplitude;
-    var maxNoise  = float.MinValue;
-    var minNoise  = float.MaxValue;
     var index     = 0;
 
     // Loop through indices.
@@ -153,8 +151,6 @@ public struct SimplexNoise {
 
       // Make sure to update noise scales.
       noise[index] = output;
-      if (output > maxNoise) maxNoise = output;
-      if (output < minNoise) minNoise = output;
     }}
 
     // Send back the noise we generated.
@@ -174,8 +170,6 @@ public struct SimplexNoise {
     var output    = 0.0f;
     var frequency = settings.frequency;
     var amplitude = settings.amplitude;
-    var maxNoise  = float.MinValue;
-    var minNoise  = float.MaxValue;
     var index     = 0;
 
     // Loop through indices.
@@ -200,8 +194,6 @@ public struct SimplexNoise {
 
       // Make sure to update noise scales.
       noise[index] = output;
-      if (output > maxNoise) maxNoise = output;
-      if (output < minNoise) minNoise = output;
     }}}
 
     // Send back the noise we generated.
