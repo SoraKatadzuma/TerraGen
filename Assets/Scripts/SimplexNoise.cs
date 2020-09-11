@@ -1,13 +1,13 @@
-﻿using Unity.Burst;
+﻿using System;
+using System.Runtime.CompilerServices;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
-using UnityEngine;
-using Prng = System.Random;
 
 /// <summary>
 /// Describes settings for a fractal noise generator.
 /// </summary>
-[System.Serializable]
+[Serializable]
 public struct NoiseSettings {
   /// <summary>
   /// The offset of the noise.
@@ -86,6 +86,7 @@ public struct SimplexNoise {
   /// <returns>
   /// The value at the sample point of the field.
   /// </returns>
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public float sample(float2 point) {
     return noise.snoise(point);
   }
@@ -99,6 +100,7 @@ public struct SimplexNoise {
   /// <returns>
   /// The value at the sample point in the field.
   /// </returns>
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public float sample(float3 point) {
     return noise.snoise(point);
   }
@@ -112,6 +114,7 @@ public struct SimplexNoise {
   /// <returns>
   /// The value at the sample point in the field.
   /// </returns>
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public float sample(float4 point) {
     return noise.snoise(point);
   }
@@ -125,6 +128,7 @@ public struct SimplexNoise {
   /// <returns>
   /// The fractal noise value at the point.
   /// </returns>
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public float sampleFractal(float2 point) {
     // Loop through octaves and layer noise.
     var frequency  = settings.frequency;
@@ -178,6 +182,7 @@ public struct SimplexNoise {
   /// <returns>
   /// The fractal noise value at the point.
   /// </returns>
+  [MethodImpl(MethodImplOptions.AggressiveInlining)]
   public float sampleFractal(float3 point) {
     // Loop through octaves and layer noise.
     var frequency  = settings.frequency;

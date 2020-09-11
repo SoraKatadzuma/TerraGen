@@ -17,7 +17,7 @@ namespace sora.TerraGen {
     public const float RESOLUTION = 5.0f;
 
     // Don't allow to be larger than planet radius.
-    public const double BLOAT = 10000.0;
+    public const float BLOAT = 5000.0f;
 
     /// <summary>
     /// Generates the volume data.
@@ -44,10 +44,9 @@ namespace sora.TerraGen {
         var norm = normalize(loc);// math.max(xloc, math.max(yloc, zloc));
 
         // Scale up.
-        var scaled  = norm * PlanetConstants.RADIUS * RESOLUTION;
-        var noise   = noiseGen.sampleFractal(scaled);
-        double offset  = noise * BLOAT;
-               offset *= offset;
+        var scaled = norm * PlanetConstants.RADIUS * RESOLUTION;
+        var noise  = noiseGen.sampleFractal(scaled);
+        var offset = noise * (BLOAT * BLOAT);
 
         // Check if within planet surface.
         var value = (loc.x * loc.x) + (loc.y * loc.y) + (loc.z * loc.z);
