@@ -199,6 +199,8 @@ namespace sora.TerraGen {
       // Get gameobject.
       var gameObject                    = new GameObject("Chunk" + mRunningChunkJob.location.ToString());
           gameObject.transform.position = new float3(mRunningChunkJob.location * noiseSettings.size);
+          gameObject.layer              = LayerMask.NameToLayer("Terrain");
+          gameObject.isStatic           = true;
 
       // Add loaded chunk.
       mLoadedChunks.Add(mRunningChunkJob.location, gameObject);
@@ -219,6 +221,7 @@ namespace sora.TerraGen {
       var meshDataSize = chunkInfo.meshData.Length;
       var mesh         = chunkObject.AddComponent<MeshFilter>().mesh;
       var renderer     = chunkObject.AddComponent<MeshRenderer>().material = mChunkMaterial;
+      var collider     = chunkObject.AddComponent<MeshCollider>();
       var vertices     = new Vector3[meshDataSize];
       var triangles    = new int[meshDataSize];
       for (int dataIndex = 0; dataIndex < meshDataSize; dataIndex++) {
