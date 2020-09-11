@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -14,21 +13,6 @@ namespace sora.TerraGen {
   /// Responsible for loading and unloading chunks at loacations that it's given.
   /// </summary>
   public sealed class TerrainGenerator : SystemBase {
-    /// <summary>
-    /// Information needed to load/generate a chunk.
-    /// </summary>
-    private struct LoadInfo {
-      /// <summary>
-      /// The entity that we are putting chunk data into.
-      /// </summary>
-      public Entity entity;
-
-      /// <summary>
-      /// The location of the chunk, in chunk space.
-      /// </summary>
-      public int3 location;
-    }
-
     /// <summary>
     /// A place to store mesh information when created.
     /// </summary>
@@ -53,7 +37,7 @@ namespace sora.TerraGen {
       /// Information about the chunk entities that will be loaded/generated.
       /// </summary>
       [ReadOnly]
-      public LoadInfo loadInfo;
+      public int3 location;
 
       /// <summary>
       /// A place to store the results of generation.
@@ -73,10 +57,6 @@ namespace sora.TerraGen {
       /// The index of the job being performed.
       /// </param>
       public void Execute() {
-        // Prep chunk data.
-        var entity   = loadInfo.entity;
-        var location = loadInfo.location;
-
         // Prep chunk generation.
         noiseSettings.offset = location * noiseSettings.size;
         noiseSettings.size  += 1;
@@ -114,7 +94,7 @@ namespace sora.TerraGen {
     /// <summary>
     /// A mapping of a loaded chunk location to it's entity.
     /// </summary>
-    private Dictionary<int3, Entity> mLoadedChunks;
+    private Dictionary<int3, GameObject> mLoadedChunks;
 
     /// <summary>
     /// A list of the running chunk jobs.
@@ -125,11 +105,6 @@ namespace sora.TerraGen {
     /// A list of chunk jobs to complete.
     /// </summary>
     private List<JobHandle> mChunkJobHandles;
-
-    /// <summary>
-    /// The archetype for the entities created by the TerrainSystem.
-    /// </summary>
-    private EntityArchetype mChunkEntityArchetype;
 
     /// <summary>
     /// The material that chunks use.
@@ -143,22 +118,12 @@ namespace sora.TerraGen {
       // Initialize our collections.
       chunksToLoad      = new List<int3>();
       chunksToUnload    = new List<int3>();
-      mLoadedChunks     = new Dictionary<int3, Entity>();
+      mLoadedChunks     = new Dictionary<int3, GameObject>();
       mRunningChunkJobs = new List<ChunkJob>();
       mChunkJobHandles  = new List<JobHandle>();
 
-      // Create chunk entity archetype.
-      mChunkEntityArchetype = EntityManager.CreateArchetype(
-        typeof(Translation),
-        typeof(RenderMesh),
-        typeof(RenderBounds),
-        typeof(LocalToWorld),
-        typeof(ChunkDataElement)
-      );
-
       // Create material.
       mChunkMaterial = new Material(Shader.Find("Standard"));
-      mChunkMaterial.enableInstancing = true;
     }
 
     /// <summary>
@@ -200,7 +165,7 @@ namespace sora.TerraGen {
         var chunk = mLoadedChunks[item];
 
         // Destroy entity and remove loaded entry.
-        EntityManager.DestroyEntity(chunk);
+        GameObject.Destroy(chunk);
         mLoadedChunks.Remove(item);
         return true;
       });
@@ -226,13 +191,14 @@ namespace sora.TerraGen {
 
         // Get chunk job.
         var chunkJob  = mRunningChunkJobs[index];
-        var loadInfo  = chunkJob.loadInfo;
         var chunkInfo = chunkJob.chunkInfo;
 
         // Complete job, add loaded chunk, and set loaded chunk data.
         item.Complete();
-        mLoadedChunks.Add(loadInfo.location, loadInfo.entity);
-        setLoadedChunkData(chunkInfo, loadInfo);
+        var gameObject = new GameObject("Chunk");
+            gameObject.transform.position = new float3(chunkJob.location * noiseSettings.size);
+        mLoadedChunks.Add(chunkJob.location, gameObject);
+        setLoadedChunkData(chunkInfo, gameObject);
 
         // Do remove this element.
         mRunningChunkJobs.RemoveAt(index);
@@ -249,24 +215,15 @@ namespace sora.TerraGen {
     /// <param name="loadInfo">
     /// Contains the location and entity for the chunk.
     /// </param>
-    private void setLoadedChunkData(ChunkInfo chunkInfo, LoadInfo loadInfo) {
-      // Fill the chunk data buffer.
-      var chunkDataBuffer = EntityManager.GetBuffer<ChunkDataElement>(loadInfo.entity);
-      for (int index = 0; index < chunkInfo.volumeData.Length; index++) {
-        // Set chunk data element.
-        chunkDataBuffer.Add(new ChunkDataElement {
-          voxel  = Voxel.Undefined,
-          volume = chunkInfo.volumeData[index]
-        });
-      }
-
+    private void setLoadedChunkData(ChunkInfo chunkInfo, GameObject chunkObject) {
       // Set chunk mesh data.
       var meshDataSize = chunkInfo.meshData.Length;
-      var mesh         = EntityManager.GetSharedComponentData<RenderMesh>(loadInfo.entity).mesh;
+      var mesh         = chunkObject.AddComponent<MeshFilter>().mesh;
+      var renderer     = chunkObject.AddComponent<MeshRenderer>().material = mChunkMaterial;
       var vertices     = new Vector3[meshDataSize];
       var triangles    = new int[meshDataSize];
       for (int dataIndex = 0; dataIndex < meshDataSize; dataIndex++) {
-        vertices[dataIndex] = chunkInfo.meshData[dataIndex];
+        vertices[dataIndex]  = chunkInfo.meshData[dataIndex];
         triangles[dataIndex] = dataIndex;
       }
 
@@ -298,23 +255,13 @@ namespace sora.TerraGen {
       if (chunksToLoad.Count == 0)
         return;
 
-      // Prep new entities.
-      NativeArray<Entity> entities;
-      createChunkEntities(out entities, chunksToLoad.Count);
-
       // Create and set load info.
       var noiseSize = noiseSettings.size + 1;
       var size      = noiseSize * noiseSize * noiseSize;
       for (int index = 0; index < chunksToLoad.Count; index++) {
-        // Create loading info.
-        var loadingInfo = new LoadInfo {
-          entity   = entities[index],
-          location = chunksToLoad[index]
-        };
-
         // Create ChunkJob.
         var chunkJob = new ChunkJob {
-          loadInfo = loadingInfo,
+          location = chunksToLoad[index],
           chunkInfo = new ChunkInfo {
             meshData = new NativeList<float3>(Allocator.TempJob),
             volumeData = new NativeArray<float>(size, Allocator.TempJob, NativeArrayOptions.UninitializedMemory)
@@ -325,48 +272,6 @@ namespace sora.TerraGen {
         // Schedule.
         mChunkJobHandles.Add(chunkJob.Schedule());
         mRunningChunkJobs.Add(chunkJob);
-      }
-
-      // Get rid of entities native array.
-      entities.Dispose();
-    }
-
-    /// <summary>
-    /// Creates new chunk entities and sets their data.
-    /// </summary>
-    /// <param name="entities">
-    /// The entities that were created.
-    /// </param>
-    /// <param name="count">
-    /// The number of entities to create.
-    /// </param>
-    private void createChunkEntities(out NativeArray<Entity> entities, int count) {
-      // Set entities.
-      entities = EntityManager.CreateEntity(mChunkEntityArchetype, count, Allocator.TempJob);
-
-      // Set entity data.
-      for (int index = 0; index < count; index++) {
-        // Set chunk world position.
-        EntityManager.SetComponentData(entities[index], new Translation {
-          Value = chunksToLoad[index] * noiseSettings.size
-        });
-
-        // Set render bounds.
-        EntityManager.SetComponentData(entities[index], new RenderBounds {
-          Value = new AABB {
-            Center  = new float3(0.0f, 0.0f, 0.0f),
-            Extents = new float3(1.0f, 1.0f, 1.0f) * noiseSettings.size
-          }
-        });
-
-        // Create chunk render mesh.
-        EntityManager.SetSharedComponentData(entities[index], new RenderMesh {
-          mesh           = new Mesh(),
-          material       = mChunkMaterial,
-          layer          = LayerMask.GetMask("Default"),
-          // castShadows    = ShadowCastingMode.On,
-          // receiveShadows = true
-        });
       }
     }
   }

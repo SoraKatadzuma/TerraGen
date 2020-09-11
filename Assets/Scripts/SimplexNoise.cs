@@ -86,7 +86,7 @@ public struct SimplexNoise {
   /// <returns>
   /// The value at the sample point of the field.
   /// </returns>
-  public float value(float2 point) {
+  public float sample(float2 point) {
     return noise.snoise(point);
   }
 
@@ -99,7 +99,7 @@ public struct SimplexNoise {
   /// <returns>
   /// The value at the sample point in the field.
   /// </returns>
-  public float value(float3 point) {
+  public float sample(float3 point) {
     return noise.snoise(point);
   }
 
@@ -112,8 +112,37 @@ public struct SimplexNoise {
   /// <returns>
   /// The value at the sample point in the field.
   /// </returns>
-  public float value(float4 point) {
+  public float sample(float4 point) {
     return noise.snoise(point);
+  }
+
+  /// <summary>
+  /// Samples a single fractal value at the given point.
+  /// </summary>
+  /// <param name="point">
+  /// The point to sample the fractal noise at.
+  /// </param>
+  /// <returns>
+  /// The fractal noise value at the point.
+  /// </returns>
+  public float sampleFractal(float2 point) {
+    // Loop through octaves and layer noise.
+    var frequency  = settings.frequency;
+    var amplitude  = settings.amplitude;
+    var result     = 0.0f;
+    var scaledFreq = 0.0f;
+    var loc        = point;
+    for (int octave = 0; octave < settings.octaves; octave++) {
+      scaledFreq = settings.scale * frequency;
+      loc.x      = point.x / scaledFreq;
+      loc.y      = point.y / scaledFreq;
+      result     = sample(loc) * amplitude;
+      amplitude *= settings.persistence;
+      frequency *= settings.lacunarity;
+    }
+
+    // Return the layered noise value.
+    return result;
   }
 
   /// <summary>
@@ -125,36 +154,49 @@ public struct SimplexNoise {
   public NativeArray<float> fractal2D() {
     var size      = settings.size * settings.size;
     var noise     = new NativeArray<float>(size, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-    var sample    = new float2();
-    var output    = 0.0f;
-    var frequency = settings.frequency;
-    var amplitude = settings.amplitude;
+    var sampleLoc = new float2();
     var index     = 0;
 
     // Loop through indices.
     for (int y = 0; y < settings.size; y++) {
     for (int x = 0; x < settings.size; x++) {
-      // Reset variables.
-      index     = y * settings.size + x;
-      amplitude = settings.amplitude;
-      frequency = settings.frequency;
-      output    = 0;
-
-      // Loop through octaves.
-      for (int octave = 0; octave < settings.octaves; octave++) {
-        sample.x   = (x + settings.offset.x) / settings.scale * frequency;
-        sample.y   = (y + settings.offset.y) / settings.scale * frequency;
-        output     = value(sample) * amplitude;
-        amplitude *= settings.persistence;
-        frequency *= settings.lacunarity;
-      }
-
-      // Make sure to update noise scales.
-      noise[index] = output;
+      index        = y * settings.size + x;
+      sampleLoc    = new float2(x + settings.offset.x, y + settings.offset.y);
+      noise[index] = sampleFractal(sampleLoc);
     }}
 
     // Send back the noise we generated.
     return noise;
+  }
+
+  /// <summary>
+  /// Samples a single fractal value at the given point.
+  /// </summary>
+  /// <param name="point">
+  /// The point to sample the fractal noise at.
+  /// </param>
+  /// <returns>
+  /// The fractal noise value at the point.
+  /// </returns>
+  public float sampleFractal(float3 point) {
+    // Loop through octaves and layer noise.
+    var frequency  = settings.frequency;
+    var amplitude  = settings.amplitude;
+    var result     = 0.0f;
+    var scaledFreq = 0.0f;
+    var loc        = point;
+    for (int octave = 0; octave < settings.octaves; octave++) {
+      scaledFreq = settings.scale * frequency;
+      loc.x      = point.x / scaledFreq;
+      loc.y      = point.y / scaledFreq;
+      loc.z      = point.z / scaledFreq;
+      result     = sample(loc) * amplitude;
+      amplitude *= settings.persistence;
+      frequency *= settings.lacunarity;
+    }
+
+    // Return the layered noise value.
+    return result;
   }
 
   /// <summary>
@@ -164,36 +206,18 @@ public struct SimplexNoise {
   /// The a map of the noise field based on the generator settings.
   /// </returns>
   public NativeArray<float> fractal3D() {
-    var size      = settings.size * settings.size * settings.size;
+    var size      = settings.size * settings.size;
     var noise     = new NativeArray<float>(size, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-    var sample    = new float3();
-    var output    = 0.0f;
-    var frequency = settings.frequency;
-    var amplitude = settings.amplitude;
+    var sampleLoc = new float3();
     var index     = 0;
 
     // Loop through indices.
-    for (int z = 0; z < settings.size; z++) {
     for (int y = 0; y < settings.size; y++) {
     for (int x = 0; x < settings.size; x++) {
-      // Reset variables.
-      index     = (z * settings.size * settings.size) + (y * settings.size) + x;
-      amplitude = settings.amplitude;
-      frequency = settings.frequency;
-      output    = 0;
-
-      // Loop through octaves.
-      for (int octave = 0; octave < settings.octaves; octave++) {
-        sample.x   = (x + settings.offset.x) / settings.scale * frequency;
-        sample.y   = (y + settings.offset.y) / settings.scale * frequency;
-        sample.z   = (z + settings.offset.z) / settings.scale * frequency;
-        output     = value(sample) * amplitude;
-        amplitude *= settings.persistence;
-        frequency *= settings.lacunarity;
-      }
-
-      // Make sure to update noise scales.
-      noise[index] = output;
+    for (int z = 0; z < settings.size; z++) {
+      index        = (z * settings.size * settings.size) + (y * settings.size) + x;
+      sampleLoc    = new float3(x + settings.offset.x, y + settings.offset.y, z + settings.offset.z);
+      noise[index] = sampleFractal(sampleLoc);
     }}}
 
     // Send back the noise we generated.
