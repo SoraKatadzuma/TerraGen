@@ -14,7 +14,7 @@ namespace sora.TerraGen {
       return vec / root;
     }
 
-    public const float RESOLUTION = 5.0f;
+    public const float RESOLUTION = 20.0f;
 
     // Don't allow to be larger than planet radius.
     public const float BLOAT = 5000.0f;

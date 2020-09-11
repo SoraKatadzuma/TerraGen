@@ -271,30 +271,6 @@ public struct MarchingCubes {
     new int[16] { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }
   };
 
-
-  /// <summary>
-  /// Interpolates two points with two values to find an approximate joining location.
-  /// </summary>
-  /// <param name="point0">
-  /// The beginning point.
-  /// </param>
-  /// <param name="point1">
-  /// The ending point.
-  /// </param>
-  /// <param name="value0">
-  /// The beginning value.
-  /// </param>
-  /// <param name="value0">
-  /// The ending value.
-  /// </param>
-  /// <returns>
-  /// The interpolated point.
-  /// </returns>
-  [MethodImpl(MethodImplOptions.AggressiveInlining)]
-  public static float3 interpolate(float3 point0, float3 point1, float value0, float value1) {
-    return point0 + (0.5f - value0) * (point1 - point0) / (value1 - value0);
-  }
-
   /// <summary>
   /// Generates a set of points that represent the vertices of a mesh, given the volume data.
   /// </summary>
@@ -318,8 +294,7 @@ public struct MarchingCubes {
     int   xp, yp, zp, cubeIndex, actualSize = size + 1, ysn, ysp, zsn, zsp;
     float xh, yh, zh;
     var   intersects = new NativeArray<float3>(12, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-    var   grid       = new float[8];
-    var   points     = new float3[8];
+    var   grid       = new NativeArray<float>(8, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
     for (int zn = 0; zn < size; zn++)
     for (int yn = 0; yn < size; yn++)
     for (int xn = 0; xn < size; xn++) {
@@ -360,31 +335,21 @@ public struct MarchingCubes {
       if (cubeIndex == 0 || cubeIndex == 255)
         continue;
 
-      // Fill points.
-      points[0] = new float3(xn, yn, zp);
-      points[1] = new float3(xp, yn, zp);
-      points[2] = new float3(xp, yn, zn);
-      points[3] = new float3(xn, yn, zn);
-      points[4] = new float3(xn, yp, zp);
-      points[5] = new float3(xp, yp, zp);
-      points[6] = new float3(xp, yp, zn);
-      points[7] = new float3(xn, yp, zn);
-
       // Get edges.
       var edges = TRITABLE[cubeIndex];
       for (int index = 0; edges[index] != -1; index++) {
-             if (edges[index] ==  0) result.Add(interpolate(points[0], points[1], grid[0], grid[1])); //new float3(xh, yn, zp));
-        else if (edges[index] ==  1) result.Add(interpolate(points[1], points[2], grid[1], grid[2])); //new float3(xp, yn, zh));
-        else if (edges[index] ==  2) result.Add(interpolate(points[2], points[3], grid[2], grid[3])); //new float3(xh, yn, zn));
-        else if (edges[index] ==  3) result.Add(interpolate(points[3], points[0], grid[3], grid[0])); //new float3(xn, yn, zh));
-        else if (edges[index] ==  4) result.Add(interpolate(points[4], points[5], grid[4], grid[5])); //new float3(xh, yp, zp));
-        else if (edges[index] ==  5) result.Add(interpolate(points[5], points[6], grid[5], grid[6])); //new float3(xp, yp, zh));
-        else if (edges[index] ==  6) result.Add(interpolate(points[6], points[7], grid[6], grid[7])); //new float3(xh, yp, zn));
-        else if (edges[index] ==  7) result.Add(interpolate(points[7], points[4], grid[7], grid[4])); //new float3(xn, yp, zh));
-        else if (edges[index] ==  8) result.Add(interpolate(points[0], points[4], grid[0], grid[4])); //new float3(xn, yh, zp));
-        else if (edges[index] ==  9) result.Add(interpolate(points[1], points[5], grid[1], grid[5])); //new float3(xp, yh, zp));
-        else if (edges[index] == 10) result.Add(interpolate(points[2], points[6], grid[2], grid[6])); //new float3(xp, yh, zn));
-        else if (edges[index] == 11) result.Add(interpolate(points[3], points[7], grid[3], grid[7])); //new float3(xn, yh, zn));
+             if (edges[index] ==  0) result.Add(new float3(xh, yn, zp));
+        else if (edges[index] ==  1) result.Add(new float3(xp, yn, zh));
+        else if (edges[index] ==  2) result.Add(new float3(xh, yn, zn));
+        else if (edges[index] ==  3) result.Add(new float3(xn, yn, zh));
+        else if (edges[index] ==  4) result.Add(new float3(xh, yp, zp));
+        else if (edges[index] ==  5) result.Add(new float3(xp, yp, zh));
+        else if (edges[index] ==  6) result.Add(new float3(xh, yp, zn));
+        else if (edges[index] ==  7) result.Add(new float3(xn, yp, zh));
+        else if (edges[index] ==  8) result.Add(new float3(xn, yh, zp));
+        else if (edges[index] ==  9) result.Add(new float3(xp, yh, zp));
+        else if (edges[index] == 10) result.Add(new float3(xp, yh, zn));
+        else if (edges[index] == 11) result.Add(new float3(xn, yh, zn));
       }
     }
 

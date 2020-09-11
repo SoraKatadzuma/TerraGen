@@ -151,7 +151,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerTransform: {fileID: 1841795170}
-  renderDistance: 24
+  renderDistance: 12
   noiseSettings:
     offset:
       x: 0
