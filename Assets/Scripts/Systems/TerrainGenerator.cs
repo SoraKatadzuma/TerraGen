@@ -5,7 +5,6 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Rendering;
-using Unity.Transforms;
 using UnityEngine;
 
 namespace sora.TerraGen {
@@ -97,30 +96,36 @@ namespace sora.TerraGen {
     private Dictionary<int3, GameObject> mLoadedChunks;
 
     /// <summary>
-    /// A list of the running chunk jobs.
+    /// A List of waiting chunk jobs.
     /// </summary>
-    private List<ChunkJob> mRunningChunkJobs;
+    private List<ChunkJob> mWaitingJobs;
+
+    /// <summary>
+    /// The currently running job.
+    /// </summary>
+    private ChunkJob mRunningChunkJob;
 
     /// <summary>
     /// A list of chunk jobs to complete.
     /// </summary>
-    private List<JobHandle> mChunkJobHandles;
+    private JobHandle mChunkJobHandle;
 
     /// <summary>
     /// The material that chunks use.
     /// </summary>
     private Material mChunkMaterial;
 
+    public static bool mFirstFrame = true;
+
     /// <summary>
     /// Called when a TerrainSystem object is created to make sure it is initialized inside of Unity.
     /// </summary>
     protected override void OnCreate() {
       // Initialize our collections.
-      chunksToLoad      = new List<int3>();
-      chunksToUnload    = new List<int3>();
-      mLoadedChunks     = new Dictionary<int3, GameObject>();
-      mRunningChunkJobs = new List<ChunkJob>();
-      mChunkJobHandles  = new List<JobHandle>();
+      chunksToLoad   = new List<int3>();
+      chunksToUnload = new List<int3>();
+      mLoadedChunks  = new Dictionary<int3, GameObject>();
+      mWaitingJobs   = new List<ChunkJob>();
 
       // Create material.
       mChunkMaterial = new Material(Shader.Find("Standard"));
@@ -138,8 +143,20 @@ namespace sora.TerraGen {
       if (chunksToUnload.Count > 0)
         unloadChunks();
 
-      // Handle the removal of completed jobs.
-      removeCompletedJobs();
+      // Check if first frame.
+      if (mFirstFrame) {
+        mFirstFrame = false;
+        runNextJob();
+        return;
+      }
+
+      // Check if job completed.
+      if (!mChunkJobHandle.IsCompleted || mWaitingJobs.Count == 0)
+        return;
+
+      // Complete the running job and run next.
+      completeRunningJob();
+      runNextJob();
     }
 
     /// <summary>
@@ -147,7 +164,8 @@ namespace sora.TerraGen {
     /// </summary>
     private void scheduleChunksForLoad() {
       sanitizeChunksToLoad();
-      scheduleLoadingJobs();
+      sanitizeWaitingJobs();
+      queueLoadingJobs();
       chunksToLoad.Clear();
     }
 
@@ -172,38 +190,19 @@ namespace sora.TerraGen {
     }
 
     /// <summary>
-    /// Removes completed jobs.
+    /// Completes the running job.
     /// </summary>
-    private void removeCompletedJobs() {
-      // Get the indices to remove.
-      var toRemove = new List<int>();
-      int index    = 0;
-      mChunkJobHandles.RemoveAll(item => {
-        // Keep track of what iteration we are on.
-        index++;
+    private void completeRunningJob() {
+      // Complete job.
+      mChunkJobHandle.Complete();
 
-        // Do not remove this element.
-        if (!item.IsCompleted)
-          return false;
+      // Get gameobject.
+      var gameObject                    = new GameObject("Chunk" + mRunningChunkJob.location.ToString());
+          gameObject.transform.position = new float3(mRunningChunkJob.location * noiseSettings.size);
 
-        // Because we are removing this element we need to reduce our index by 1.
-        index--;
-
-        // Get chunk job.
-        var chunkJob  = mRunningChunkJobs[index];
-        var chunkInfo = chunkJob.chunkInfo;
-
-        // Complete job, add loaded chunk, and set loaded chunk data.
-        item.Complete();
-        var gameObject = new GameObject("Chunk");
-            gameObject.transform.position = new float3(chunkJob.location * noiseSettings.size);
-        mLoadedChunks.Add(chunkJob.location, gameObject);
-        setLoadedChunkData(chunkInfo, gameObject);
-
-        // Do remove this element.
-        mRunningChunkJobs.RemoveAt(index);
-        return true;
-      });
+      // Add loaded chunk.
+      mLoadedChunks.Add(mRunningChunkJob.location, gameObject);
+      setLoadedChunkData(mRunningChunkJob.chunkInfo, gameObject);
     }
 
     /// <summary>
@@ -244,13 +243,21 @@ namespace sora.TerraGen {
     /// </summary>
     private void sanitizeChunksToLoad() {
       // Remove chunks that are already loaded.
-      chunksToLoad.RemoveAll(item => mLoadedChunks.ContainsKey(item));
+      chunksToLoad.RemoveAll(item => mLoadedChunks.ContainsKey(item) || chunksToUnload.Contains(item));
+    }
+
+    /// <summary>
+    /// Sanitizes the waiting jobs so we aren't attempting to load chunks that are to be unloaded.
+    /// </summary>
+    private void sanitizeWaitingJobs() {
+      // Remove jobs whose locations should be unloaded.
+      mWaitingJobs.RemoveAll(item => chunksToUnload.Contains(item.location));
     }
 
     /// <summary>
     /// Schedules a single loading job based on the chunks to load.
     /// </summary>
-    private void scheduleLoadingJobs() {
+    private void queueLoadingJobs() {
       // No need to try and process chunks if there are none.
       if (chunksToLoad.Count == 0)
         return;
@@ -261,18 +268,26 @@ namespace sora.TerraGen {
       for (int index = 0; index < chunksToLoad.Count; index++) {
         // Create ChunkJob.
         var chunkJob = new ChunkJob {
-          location = chunksToLoad[index],
+          location  = chunksToLoad[index],
           chunkInfo = new ChunkInfo {
-            meshData = new NativeList<float3>(Allocator.TempJob),
+            meshData   = new NativeList<float3>(Allocator.TempJob),
             volumeData = new NativeArray<float>(size, Allocator.TempJob, NativeArrayOptions.UninitializedMemory)
           },
           noiseSettings = noiseSettings
         };
 
-        // Schedule.
-        mChunkJobHandles.Add(chunkJob.Schedule());
-        mRunningChunkJobs.Add(chunkJob);
+        // Add to waiting jobs.
+        mWaitingJobs.Add(chunkJob);
       }
+    }
+
+    /// <summary>
+    /// Sets the next job to run.
+    /// </summary>
+    private void runNextJob() {
+      mRunningChunkJob = mWaitingJobs[0];
+      mChunkJobHandle  = mRunningChunkJob.Schedule();
+      mWaitingJobs.RemoveAt(0);
     }
   }
 }
