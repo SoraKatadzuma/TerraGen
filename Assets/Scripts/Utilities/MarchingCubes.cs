@@ -286,7 +286,7 @@ public struct MarchingCubes {
   /// <returns>
   /// The points by which the marching cube intersects the volume data.
   /// </returns>
-  public static NativeList<float3> generate(NativeArray<float> data, int size, float lod) {
+  public static NativeList<float3> Generate(NativeArray<float> data, int size, float lod) {
     // We'll store our result here.
     var result = new NativeList<float3>(Allocator.Temp);
 
@@ -355,6 +355,7 @@ public struct MarchingCubes {
 
     // Send back result.
     intersects.Dispose();
+    grid.Dispose();
     return result;
   }
 }

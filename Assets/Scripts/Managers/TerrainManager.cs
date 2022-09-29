@@ -84,12 +84,9 @@ public class TerrainManager : MonoBehaviour {
       chunksToLoad.Add(new int3(x, y, z));
 
     // Figure out which are already loaded.
-    chunksToLoad.ForEach(item => {
-      // Do not add this chunk.
-      bool wasRemoved = mLoadedChunks.Remove(item);
-      if (!wasRemoved)
+    foreach (var item in chunksToLoad)
+      if (!mLoadedChunks.Remove(item))
         mTerrainGenerator.chunksToLoad.Add(item);
-    });
 
     // Send the remaining previously loaded chunks as ones to unload.
     mTerrainGenerator.chunksToUnload.AddRange(mLoadedChunks);

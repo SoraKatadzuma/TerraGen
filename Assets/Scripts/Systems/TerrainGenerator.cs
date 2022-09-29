@@ -4,14 +4,13 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
-using Unity.Rendering;
 using UnityEngine;
 
 namespace sora.TerraGen {
   /// <summary>
-  /// Responsible for loading and unloading chunks at loacations that it's given.
+  /// Responsible for loading and unloading chunks at locations that it's given.
   /// </summary>
-  public sealed class TerrainGenerator : SystemBase {
+  public sealed partial class TerrainGenerator : SystemBase {
     /// <summary>
     /// A place to store mesh information when created.
     /// </summary>
@@ -41,7 +40,6 @@ namespace sora.TerraGen {
       /// <summary>
       /// A place to store the results of generation.
       /// </summary>
-      [WriteOnly]
       public ChunkInfo chunkInfo;
 
       /// <summary>
@@ -52,26 +50,20 @@ namespace sora.TerraGen {
       /// <summary>
       /// Executes the code necessary to loading/generating chunk entity data.
       /// </summary>
-      /// <param name="index">
-      /// The index of the job being performed.
-      /// </param>
       public void Execute() {
         // Prep chunk generation.
         noiseSettings.offset = location * noiseSettings.size;
         noiseSettings.size  += 1;
 
         // Perform chunk generation.
-        var volumeData = VolumeGenerator.generateData(noiseSettings);
-        var meshData   = MarchingCubes.generate(volumeData, noiseSettings.size - 1, lod: 1);
+        var volumeData = VolumeGenerator.GenerateData(noiseSettings);
+        var meshData   = MarchingCubes.Generate(chunkInfo.volumeData, noiseSettings.size - 1, lod: 1);
 
-        // Manually copy mesh data.
-        for (int index = 0; index < meshData.Length; index++)
-          chunkInfo.meshData.Add(meshData[index]);
-
-        // Copy data and dispose of temporaries from callees.
+        // Copy and dispose.
+        chunkInfo.meshData.CopyFrom(meshData);
         chunkInfo.volumeData.CopyFrom(volumeData);
-        volumeData.Dispose();
         meshData.Dispose();
+        volumeData.Dispose();
       }
     }
 
@@ -117,6 +109,10 @@ namespace sora.TerraGen {
 
     public static bool mFirstFrame = true;
 
+    protected override void OnStartRunning() {
+      //
+    }
+
     /// <summary>
     /// Called when a TerrainSystem object is created to make sure it is initialized inside of Unity.
     /// </summary>
@@ -129,6 +125,13 @@ namespace sora.TerraGen {
 
       // Create material.
       mChunkMaterial = new Material(Shader.Find("Standard"));
+    }
+
+    protected override void OnDestroy() {
+      foreach (var job in mWaitingJobs) {
+        job.chunkInfo.meshData.Dispose();
+        job.chunkInfo.volumeData.Dispose();
+      }
     }
 
     /// <summary>
@@ -179,7 +182,7 @@ namespace sora.TerraGen {
         if (!mLoadedChunks.ContainsKey(item))
           return true;
 
-        // Get chunk entity and destory it.
+        // Get chunk entity and destroy it.
         var chunk = mLoadedChunks[item];
 
         // Destroy entity and remove loaded entry.
@@ -196,11 +199,15 @@ namespace sora.TerraGen {
       // Complete job.
       mChunkJobHandle.Complete();
 
-      // Get gameobject.
-      var gameObject                    = new GameObject("Chunk" + mRunningChunkJob.location.ToString());
-          gameObject.transform.position = new float3(mRunningChunkJob.location * noiseSettings.size);
-          gameObject.layer              = LayerMask.NameToLayer("Terrain");
-          gameObject.isStatic           = true;
+      // Get GameObject.
+      var gameObject = new GameObject("Chunk" + mRunningChunkJob.location) {
+        transform = {
+          position = new float3(mRunningChunkJob.location * noiseSettings.size)
+        },
+
+        layer = LayerMask.NameToLayer("Terrain"),
+        isStatic = true
+      };
 
       // Add loaded chunk.
       mLoadedChunks.Add(mRunningChunkJob.location, gameObject);
@@ -213,18 +220,19 @@ namespace sora.TerraGen {
     /// <param name="chunkInfo">
     /// Contains the mesh and volume information for the chunk.
     /// </param>
-    /// <param name="loadInfo">
-    /// Contains the location and entity for the chunk.
+    /// <param name="chunkObject">
+    /// The GameObject that we will populate to create and show the chunk.
     /// </param>
     private void setLoadedChunkData(ChunkInfo chunkInfo, GameObject chunkObject) {
       // Set chunk mesh data.
       var meshDataSize = chunkInfo.meshData.Length;
       var mesh         = chunkObject.AddComponent<MeshFilter>().mesh;
-      var renderer     = chunkObject.AddComponent<MeshRenderer>().material = mChunkMaterial;
-      var collider     = chunkObject.AddComponent<MeshCollider>();
-      var vertices     = new Vector3[meshDataSize];
-      var triangles    = new int[meshDataSize];
-      for (int dataIndex = 0; dataIndex < meshDataSize; dataIndex++) {
+      chunkObject.AddComponent<MeshRenderer>().material = mChunkMaterial;
+      chunkObject.AddComponent<MeshCollider>();
+
+      var vertices  = new Vector3[meshDataSize];
+      var triangles = new int[meshDataSize];
+      for (var dataIndex = 0; dataIndex < meshDataSize; dataIndex++) {
         vertices[dataIndex]  = chunkInfo.meshData[dataIndex];
         triangles[dataIndex] = dataIndex;
       }
@@ -268,11 +276,11 @@ namespace sora.TerraGen {
       // Create and set load info.
       var noiseSize = noiseSettings.size + 1;
       var size      = noiseSize * noiseSize * noiseSize;
-      for (int index = 0; index < chunksToLoad.Count; index++) {
+      foreach (var t in chunksToLoad) {
         // Create ChunkJob.
         var chunkJob = new ChunkJob {
-          location  = chunksToLoad[index],
-          chunkInfo = new ChunkInfo {
+          location      = t,
+          chunkInfo     = new ChunkInfo {
             meshData   = new NativeList<float3>(Allocator.TempJob),
             volumeData = new NativeArray<float>(size, Allocator.TempJob, NativeArrayOptions.UninitializedMemory)
           },

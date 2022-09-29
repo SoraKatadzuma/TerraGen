@@ -1,0 +1,16 @@
+{
+    "name": "Simular.Solaria",
+    "rootNamespace": "Simular.Solaria",
+    "references": [
+        "GUID:cafc996beddcb4b409f332dba009b0ec"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
